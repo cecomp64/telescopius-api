@@ -17,13 +17,13 @@ async function main() {
       lat: 38.7223,
       lon: -9.1393,
       timezone: 'Europe/Lisbon',
-      sp_types: 'galaxy,eneb',
-      sp_min_alt: 30,           // At least 30 degrees above horizon
-      sp_mag_max: 10,           // Magnitude 10 or brighter
-      sp_moon_dist_min: 30,     // At least 30 degrees from moon
-      sp_order: 'mag',          // Order by magnitude
-      sp_order_asc: true,       // Brightest first
-      sp_results_per_page: 10
+      types: 'galaxy,eneb',
+      min_alt: 30,           // At least 30 degrees above horizon
+      mag_max: 10,           // Magnitude 10 or brighter
+      moon_dist_min: 30,     // At least 30 degrees from moon
+      order: 'mag',          // Order by magnitude
+      order_asc: true,       // Brightest first
+      results_per_page: 10
     });
 
     console.log(`Found ${results.matched} objects matching criteria\n`);

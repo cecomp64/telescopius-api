@@ -50,32 +50,32 @@ class TelescopiusClient {
    * @param {number} params.lon - Longitude in decimal degrees
    * @param {string} params.timezone - Timezone (e.g., 'Europe/Lisbon', 'America/New_York')
    * @param {string} [params.datetime] - Date and time in ISO format
-   * @param {string} [params.sp_types] - Object types to search for (comma-separated: 'planet', 'galaxy', 'eneb', etc.)
-   * @param {string} [params.sp_name] - Object name to search for
-   * @param {boolean} [params.sp_name_exact] - Exact name match
-   * @param {string} [params.sp_con] - Constellation code (e.g., 'ORI', 'CYG')
-   * @param {number} [params.sp_min_alt] - Minimum altitude in degrees
-   * @param {number} [params.sp_min_alt_minutes] - Minimum time at minimum altitude in minutes
-   * @param {number} [params.sp_moon_dist_min] - Minimum moon distance in degrees
-   * @param {number} [params.sp_moon_dist_max] - Maximum moon distance in degrees
-   * @param {number} [params.sp_mag_max] - Maximum magnitude
-   * @param {number} [params.sp_mag_min] - Minimum magnitude
-   * @param {boolean} [params.sp_mag_unknown] - Include objects with unknown magnitude
-   * @param {number} [params.sp_size_max] - Maximum size in arcminutes
-   * @param {number} [params.sp_size_min] - Minimum size in arcminutes
-   * @param {string} [params.sp_order] - Order results by field ('name', 'ra', 'dec', 'mag', 'size', 'alt', etc.)
-   * @param {boolean} [params.sp_order_asc] - Ascending order
-   * @param {number} [params.sp_results_per_page=50] - Results per page
-   * @param {number} [params.sp_page=1] - Page number
+   * @param {string} [params.types] - Object types to search for (comma-separated: 'planet', 'galaxy', 'eneb', etc.)
+   * @param {string} [params.name] - Object name to search for
+   * @param {boolean} [params.name_exact] - Exact name match
+   * @param {string} [params.con] - Constellation code (e.g., 'ORI', 'CYG')
+   * @param {number} [params.min_alt] - Minimum altitude in degrees
+   * @param {number} [params.min_alt_minutes] - Minimum time at minimum altitude in minutes
+   * @param {number} [params.moon_dist_min] - Minimum moon distance in degrees
+   * @param {number} [params.moon_dist_max] - Maximum moon distance in degrees
+   * @param {number} [params.mag_max] - Maximum magnitude
+   * @param {number} [params.mag_min] - Minimum magnitude
+   * @param {boolean} [params.mag_unknown] - Include objects with unknown magnitude
+   * @param {number} [params.size_max] - Maximum size in arcminutes
+   * @param {number} [params.size_min] - Minimum size in arcminutes
+   * @param {string} [params.order] - Order results by field ('name', 'ra', 'dec', 'mag', 'size', 'alt', etc.)
+   * @param {boolean} [params.order_asc] - Ascending order
+   * @param {number} [params.results_per_page=50] - Results per page
+   * @param {number} [params.page=1] - Page number
    * @returns {Promise<{matched: number, objects: Array}>} Search results with matched count and objects array
    * @example
    * const results = await client.searchTargets({
    *   lat: 38.7223,
    *   lon: -9.1393,
    *   timezone: 'Europe/Lisbon',
-   *   sp_types: 'galaxy,eneb',
-   *   sp_min_alt: 30,
-   *   sp_mag_max: 10
+   *   types: 'galaxy,eneb',
+   *   min_alt: 30,
+   *   mag_max: 10
    * });
    */
   async searchTargets(params) {
@@ -94,23 +94,93 @@ class TelescopiusClient {
    * @param {number} params.lon - Longitude in decimal degrees
    * @param {string} params.timezone - Timezone (e.g., 'Europe/Lisbon', 'America/New_York')
    * @param {string} [params.datetime] - Date and time in ISO format
-   * @param {string} [params.sp_types] - Object types to search for (comma-separated)
-   * @param {number} [params.sp_min_alt] - Minimum altitude in degrees
-   * @param {number} [params.sp_min_alt_minutes] - Minimum time at minimum altitude in minutes
-   * @param {number} [params.sp_moon_dist_min] - Minimum moon distance in degrees
-   * @param {number} [params.sp_moon_dist_max] - Maximum moon distance in degrees
+   * @param {string} [params.types] - Object types to search for (comma-separated)
+   * @param {number} [params.min_alt] - Minimum altitude in degrees
+   * @param {number} [params.min_alt_minutes] - Minimum time at minimum altitude in minutes
+   * @param {number} [params.moon_dist_min] - Minimum moon distance in degrees
+   * @param {number} [params.moon_dist_max] - Maximum moon distance in degrees
    * @returns {Promise<{matched: number, objects: Array}>} Highlights with matched count and objects array
    * @example
    * const highlights = await client.getTargetHighlights({
    *   lat: 38.7223,
    *   lon: -9.1393,
    *   timezone: 'Europe/Lisbon',
-   *   sp_types: 'galaxy,eneb'
+   *   types: 'galaxy,eneb'
    * });
    */
   async getTargetHighlights(params) {
     try {
       const response = await this.client.get('/targets/highlights', { params });
+      return response.data;
+    } catch (error) {
+      this._handleError(error);
+    }
+  }
+
+  /**
+   * Get all target lists for the current user
+   * @returns {Promise<Array<{id: string, name: string}>>} Array of target lists
+   * @example
+   * const lists = await client.getTargetLists();
+   * lists.forEach(list => console.log(list.id, list.name));
+   */
+  async getTargetLists() {
+    try {
+      const response = await this.client.get('/targets/lists');
+      return response.data;
+    } catch (error) {
+      this._handleError(error);
+    }
+  }
+
+  /**
+   * Get a specific target list by ID with all its targets
+   * @param {string} id - The list ID
+   * @param {Object} [params] - Optional parameters for location and time
+   * @param {number} [params.lat] - Latitude in decimal degrees
+   * @param {number} [params.lon] - Longitude in decimal degrees
+   * @param {string} [params.timezone] - Timezone (e.g., 'Europe/Lisbon')
+   * @param {string} [params.datetime] - Date and time in ISO format
+   * @param {string} [params.partner_observatory] - Partner observatory ID
+   * @param {string} [params.partner_telescope] - Partner telescope ID
+   * @returns {Promise<Object>} Target list with all targets
+   * @example
+   * const list = await client.getTargetListById('12345678', {
+   *   lat: 38.7223,
+   *   lon: -9.1393,
+   *   timezone: 'Europe/Lisbon'
+   * });
+   */
+  async getTargetListById(id, params = {}) {
+    try {
+      const response = await this.client.get(`/targets/lists/${id}`, { params });
+      return response.data;
+    } catch (error) {
+      this._handleError(error);
+    }
+  }
+
+  /**
+   * Get time information for major solar system bodies
+   * @param {Object} params - Parameters for location and time
+   * @param {number} params.lat - Latitude in decimal degrees
+   * @param {number} params.lon - Longitude in decimal degrees
+   * @param {string} params.timezone - Timezone (e.g., 'Europe/Lisbon')
+   * @param {string} [params.datetime] - Date and time in ISO format
+   * @param {string} [params.time_format] - Time format ('user', 'iso', 'utc')
+   * @param {string} [params.partner_observatory] - Partner observatory ID
+   * @param {string} [params.partner_telescope] - Partner telescope ID
+   * @returns {Promise<Object>} Solar system times information
+   * @example
+   * const times = await client.getSolarSystemTimes({
+   *   lat: 38.7223,
+   *   lon: -9.1393,
+   *   timezone: 'Europe/Lisbon'
+   * });
+   */
+  async getSolarSystemTimes(params) {
+    try {
+      const response = await this.client.get('/solar-system/times', { params });
       return response.data;
     } catch (error) {
       this._handleError(error);

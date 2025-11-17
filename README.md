@@ -18,6 +18,34 @@ yarn add telescopius-api
 
 First, you'll need an API key from Telescopius. Visit [https://api.telescopius.com](https://api.telescopius.com) to get your key.
 
+## Development
+
+### Running Tests
+
+The SDK includes both unit tests (mocked) and integration tests (real API calls).
+
+```bash
+# Run all tests (unit + integration)
+npm test
+
+# Run only integration tests (requires .env with API key)
+npm run test:integration
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with coverage report
+npm run test:coverage
+```
+
+**For integration tests**, create a `.env` file:
+```bash
+cp .env.example .env
+# Add your API key to .env
+```
+
+See [TESTING.md](TESTING.md) for detailed testing documentation.
+
 ### Basic Usage
 
 ```javascript
@@ -69,23 +97,23 @@ Advanced search to find targets in the sky based on location, date, and various 
 - `params.lon` (number, required): Longitude in decimal degrees
 - `params.timezone` (string, required): Timezone (e.g., 'Europe/Lisbon', 'America/New_York')
 - `params.datetime` (string, optional): Date and time in ISO format
-- `params.sp_types` (string, optional): Object types (comma-separated: 'planet', 'galaxy', 'eneb', 'ocl', etc.)
-- `params.sp_name` (string, optional): Object name to search for
-- `params.sp_name_exact` (boolean, optional): Exact name match
-- `params.sp_con` (string, optional): Constellation code (e.g., 'ORI', 'CYG', 'AND')
-- `params.sp_min_alt` (number, optional): Minimum altitude in degrees
-- `params.sp_min_alt_minutes` (number, optional): Minimum time at minimum altitude in minutes
-- `params.sp_moon_dist_min` (number, optional): Minimum moon distance in degrees
-- `params.sp_moon_dist_max` (number, optional): Minimum moon distance in degrees
-- `params.sp_mag_max` (number, optional): Maximum magnitude
-- `params.sp_mag_min` (number, optional): Minimum magnitude
-- `params.sp_mag_unknown` (boolean, optional): Include objects with unknown magnitude
-- `params.sp_size_max` (number, optional): Maximum size in arcminutes
-- `params.sp_size_min` (number, optional): Minimum size in arcminutes
-- `params.sp_order` (string, optional): Order by ('name', 'ra', 'dec', 'mag', 'size', 'alt', etc.)
-- `params.sp_order_asc` (boolean, optional): Ascending order
-- `params.sp_results_per_page` (number, optional): Results per page (default: 50)
-- `params.sp_page` (number, optional): Page number (default: 1)
+- `params.types` (string, optional): Object types (comma-separated: 'planet', 'galaxy', 'eneb', 'ocl', etc.)
+- `params.name` (string, optional): Object name to search for
+- `params.name_exact` (boolean, optional): Exact name match
+- `params.con` (string, optional): Constellation code (e.g., 'ORI', 'CYG', 'AND')
+- `params.min_alt` (number, optional): Minimum altitude in degrees
+- `params.min_alt_minutes` (number, optional): Minimum time at minimum altitude in minutes
+- `params.moon_dist_min` (number, optional): Minimum moon distance in degrees
+- `params.moon_dist_max` (number, optional): Minimum moon distance in degrees
+- `params.mag_max` (number, optional): Maximum magnitude
+- `params.mag_min` (number, optional): Minimum magnitude
+- `params.mag_unknown` (boolean, optional): Include objects with unknown magnitude
+- `params.size_max` (number, optional): Maximum size in arcminutes
+- `params.size_min` (number, optional): Minimum size in arcminutes
+- `params.order` (string, optional): Order by ('name', 'ra', 'dec', 'mag', 'size', 'alt', etc.)
+- `params.order_asc` (boolean, optional): Ascending order
+- `params.results_per_page` (number, optional): Results per page (default: 50)
+- `params.page` (number, optional): Page number (default: 1)
 
 **Returns:** `Promise<{matched: number, objects: Array}>`
 
@@ -95,10 +123,10 @@ const results = await client.searchTargets({
   lat: 38.7223,
   lon: -9.1393,
   timezone: 'Europe/Lisbon',
-  sp_types: 'galaxy,eneb',
-  sp_min_alt: 30,
-  sp_mag_max: 10,
-  sp_results_per_page: 20
+  types: 'galaxy,eneb',
+  min_alt: 30,
+  mag_max: 10,
+  results_per_page: 20
 });
 
 console.log(`Found ${results.matched} objects`);
@@ -120,11 +148,11 @@ Get popular targets best seen around this time of year at your location.
 - `params.lon` (number, required): Longitude in decimal degrees
 - `params.timezone` (string, required): Timezone
 - `params.datetime` (string, optional): Date and time in ISO format
-- `params.sp_types` (string, optional): Object types (comma-separated)
-- `params.sp_min_alt` (number, optional): Minimum altitude in degrees
-- `params.sp_min_alt_minutes` (number, optional): Minimum time at minimum altitude in minutes
-- `params.sp_moon_dist_min` (number, optional): Minimum moon distance in degrees
-- `params.sp_moon_dist_max` (number, optional): Maximum moon distance in degrees
+- `params.types` (string, optional): Object types (comma-separated)
+- `params.min_alt` (number, optional): Minimum altitude in degrees
+- `params.min_alt_minutes` (number, optional): Minimum time at minimum altitude in minutes
+- `params.moon_dist_min` (number, optional): Minimum moon distance in degrees
+- `params.moon_dist_max` (number, optional): Maximum moon distance in degrees
 
 **Returns:** `Promise<{matched: number, objects: Array}>`
 
@@ -134,8 +162,8 @@ const highlights = await client.getTargetHighlights({
   lat: 38.7223,
   lon: -9.1393,
   timezone: 'Europe/Lisbon',
-  sp_types: 'galaxy,eneb',
-  sp_min_alt: 20
+  types: 'galaxy,eneb',
+  min_alt: 20
 });
 
 console.log(`Tonight's highlights (${highlights.matched} total):`);
@@ -144,22 +172,99 @@ highlights.objects.forEach(item => {
 });
 ```
 
+#### `getTargetLists()`
+
+Get all target lists for the current user.
+
+**Returns:** `Promise<Array<{id: string, name: string}>>`
+
+**Example:**
+```javascript
+const lists = await client.getTargetLists();
+lists.forEach(list => {
+  console.log(`List ID: ${list.id}, Name: ${list.name}`);
+});
+```
+
+#### `getTargetListById(id, params)`
+
+Get a specific target list by ID with all its targets.
+
+**Parameters:**
+- `id` (string, required): The list ID
+- `params.lat` (number, optional): Latitude in decimal degrees
+- `params.lon` (number, optional): Longitude in decimal degrees
+- `params.timezone` (string, optional): Timezone
+- `params.datetime` (string, optional): Date and time in ISO format
+- `params.partner_observatory` (string, optional): Partner observatory ID
+- `params.partner_telescope` (string, optional): Partner telescope ID
+
+**Returns:** `Promise<Object>`
+
+**Example:**
+```javascript
+const list = await client.getTargetListById('12345678', {
+  lat: 38.7223,
+  lon: -9.1393,
+  timezone: 'Europe/Lisbon'
+});
+
+console.log(`List: ${list.name}`);
+list.targets.forEach(target => {
+  console.log(`- ${target.main_name || target.main_id}`);
+});
+```
+
+#### `getSolarSystemTimes(params)`
+
+Get time information for major solar system bodies (Sun, Moon, planets).
+
+**Parameters:**
+- `params.lat` (number, required): Latitude in decimal degrees
+- `params.lon` (number, required): Longitude in decimal degrees
+- `params.timezone` (string, required): Timezone
+- `params.datetime` (string, optional): Date and time in ISO format
+- `params.time_format` (string, optional): Time format ('user', 'iso', 'utc')
+- `params.partner_observatory` (string, optional): Partner observatory ID
+- `params.partner_telescope` (string, optional): Partner telescope ID
+
+**Returns:** `Promise<Object>`
+
+**Example:**
+```javascript
+const times = await client.getSolarSystemTimes({
+  lat: 38.7223,
+  lon: -9.1393,
+  timezone: 'Europe/Lisbon'
+});
+
+console.log(`Sunrise: ${times.sun.rise}, Sunset: ${times.sun.set}`);
+console.log(`Moonrise: ${times.moon.rise}, Moonset: ${times.moon.set}`);
+console.log(`Moon phase: ${times.moon.phase}`);
+```
+
 ## Object Types
 
-Common object types you can search for:
+Object type codes for the `types` parameter:
 
 - `planet` - Planets
 - `star` - Stars
 - `dstar` - Double stars
-- `galaxy` - Galaxies
+- `mstar` - Multiple stars
+- `gxy` - Galaxies
+- `sgx` - Spiral galaxies
 - `eneb` - Emission nebulae
 - `rneb` - Reflection nebulae
+- `dineb` - Diffuse nebulae
 - `pneb` - Planetary nebulae
 - `snr` - Supernova remnants
 - `gcl` - Globular clusters
 - `ocl` - Open clusters
+- `opcl` - Open clusters (alternate)
 - `ast` - Asteroids
 - `comet` - Comets
+
+Use comma-separated codes for multiple types: `types: 'gxy,eneb,pneb'`
 
 ## Response Data
 
@@ -203,6 +308,17 @@ Each target in the results contains:
   }
 }
 ```
+
+## Examples
+
+See the [examples](examples/) directory for complete working examples:
+
+- [basic.js](examples/basic.js) - Get quote of the day
+- [search-targets.js](examples/search-targets.js) - Advanced target search
+- [highlights.js](examples/highlights.js) - Tonight's highlights
+- [find-by-name.js](examples/find-by-name.js) - Search by object name
+- [target-lists.js](examples/target-lists.js) - Working with user target lists
+- [solar-system-times.js](examples/solar-system-times.js) - Sun, Moon, and planet times
 
 ## Error Handling
 

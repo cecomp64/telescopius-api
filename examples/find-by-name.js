@@ -16,8 +16,8 @@ async function main() {
       lat: 38.7223,
       lon: -9.1393,
       timezone: 'Europe/Lisbon',
-      sp_name: 'Andromeda',
-      sp_name_exact: false  // Partial match
+      name: 'Andromeda',
+      name_exact: false  // Partial match
     });
 
     console.log(`Found ${results.matched} object(s) matching "Andromeda"\n`);

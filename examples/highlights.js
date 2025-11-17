@@ -17,9 +17,9 @@ async function main() {
       lat: 40.7128,
       lon: -74.0060,
       timezone: 'America/New_York',
-      sp_types: 'galaxy,eneb,pneb,gcl',
-      sp_min_alt: 20,           // At least 20 degrees above horizon
-      sp_moon_dist_min: 20      // At least 20 degrees from moon
+      types: 'galaxy,eneb,pneb,gcl',
+      min_alt: 20,           // At least 20 degrees above horizon
+      moon_dist_min: 20      // At least 20 degrees from moon
     });
 
     console.log(`${highlights.matched} popular targets are well-positioned tonight\n`);
