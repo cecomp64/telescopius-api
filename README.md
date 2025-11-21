@@ -243,6 +243,39 @@ console.log(`Moonrise: ${times.moon.rise}, Moonset: ${times.moon.set}`);
 console.log(`Moon phase: ${times.moon.phase}`);
 ```
 
+#### `searchPictures(params)`
+
+Search for astrophotography pictures uploaded by the community.
+
+**Parameters:**
+- `params.results_per_page` (number, optional): Results per page
+- `params.order` (string, optional): Order by field (e.g., 'is_featured', 'acquisition_timestamp', 'created_timestamp', 'final_revision_timestamp', 'popularity')
+- `params.page` (number, optional): Page number
+- `params.username` (string, optional): Filter by username
+
+**Returns:** `Promise<Object>`
+
+**Example:**
+```javascript
+// Get featured pictures
+const featured = await client.searchPictures({
+  results_per_page: 10,
+  order: 'is_featured',
+  page: 1
+});
+
+console.log(`Found ${featured.results.length} pictures`);
+featured.results.forEach(pic => {
+  console.log(`${pic.title} by ${pic.username}`);
+});
+
+// Search by username
+const userPics = await client.searchPictures({
+  username: 'sebagr',
+  results_per_page: 20
+});
+```
+
 ## Object Types
 
 Object type codes for the `types` parameter:
@@ -319,6 +352,7 @@ See the [examples](examples/) directory for complete working examples:
 - [find-by-name.js](examples/find-by-name.js) - Search by object name
 - [target-lists.js](examples/target-lists.js) - Working with user target lists
 - [solar-system-times.js](examples/solar-system-times.js) - Sun, Moon, and planet times
+- [search-pictures.js](examples/search-pictures.js) - Search astrophotography pictures
 
 ## Error Handling
 

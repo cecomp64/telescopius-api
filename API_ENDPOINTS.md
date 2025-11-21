@@ -44,6 +44,13 @@ Complete list of all endpoints implemented in this SDK.
 - **Parameters:** Location, date, time format
 - **Returns:** `Object` with times for each celestial body
 
+### Pictures Search
+- **Endpoint:** `GET /pictures/search`
+- **Method:** `client.searchPictures(params)`
+- **Description:** Search for astrophotography pictures from the community
+- **Parameters:** results_per_page, order, page, username
+- **Returns:** `Object` with results array
+
 ## Authentication
 
 All endpoints require API key authentication via the `Authorization` header:

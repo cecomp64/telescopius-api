@@ -409,6 +409,68 @@ describe('TelescopiusClient', () => {
     });
   });
 
+  describe('searchPictures', () => {
+    beforeEach(() => {
+      client = new TelescopiusClient({ apiKey: mockApiKey });
+    });
+
+    test('should search pictures with parameters', async () => {
+      const mockResponse = {
+        results: [
+          {
+            id: '12345',
+            title: 'Andromeda Galaxy',
+            username: 'sebagr',
+            is_featured: true
+          }
+        ],
+        total: 100
+      };
+
+      const params = {
+        results_per_page: 120,
+        order: 'is_featured',
+        page: 1,
+        username: 'sebagr'
+      };
+
+      client.client = {
+        get: jest.fn().mockResolvedValue({ data: mockResponse })
+      };
+
+      const result = await client.searchPictures(params);
+
+      expect(client.client.get).toHaveBeenCalledWith('/pictures/search', { params });
+      expect(result).toEqual(mockResponse);
+    });
+
+    test('should work without parameters', async () => {
+      const mockResponse = { results: [], total: 0 };
+
+      client.client = {
+        get: jest.fn().mockResolvedValue({ data: mockResponse })
+      };
+
+      const result = await client.searchPictures();
+
+      expect(client.client.get).toHaveBeenCalledWith('/pictures/search', { params: {} });
+      expect(result).toEqual(mockResponse);
+    });
+
+    test('should handle errors', async () => {
+      client.client = {
+        get: jest.fn().mockRejectedValue({
+          response: {
+            status: 400,
+            data: { error: 'Invalid parameters' }
+          }
+        })
+      };
+
+      await expect(client.searchPictures({ page: -1 })).rejects.toThrow('Bad Request');
+    });
+  });
+
   describe('Error Handling', () => {
     beforeEach(() => {
       client = new TelescopiusClient({ apiKey: mockApiKey });

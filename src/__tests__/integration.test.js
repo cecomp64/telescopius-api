@@ -221,6 +221,50 @@ describe('Telescopius API Integration Tests', () => {
     }, 10000);
   });
 
+  describe('searchPictures', () => {
+    test('should search pictures from real API', async () => {
+      const pictures = await client.searchPictures({
+        results_per_page: 10,
+        order: 'is_featured',
+        page: 1
+      });
+
+      expect(pictures).toBeDefined();
+
+      // API returns 'page_results' for pictures
+      const resultsArray = pictures.results || pictures.page_results;
+      expect(resultsArray).toBeDefined();
+      expect(Array.isArray(resultsArray)).toBe(true);
+
+      if (resultsArray && resultsArray.length > 0) {
+        const firstPicture = resultsArray[0];
+        expect(firstPicture).toHaveProperty('id');
+
+        console.log(`\nFound ${resultsArray.length} pictures`);
+        console.log(`First picture: ${firstPicture.title || firstPicture.id}`);
+        if (firstPicture.author_username) {
+          console.log(`  By: ${firstPicture.author_username}`);
+        }
+      }
+    }, 10000);
+
+    test('should search pictures by username', async () => {
+      const pictures = await client.searchPictures({
+        username: 'sebagr',
+        results_per_page: 5
+      });
+
+      expect(pictures).toBeDefined();
+
+      const resultsArray = pictures.results || pictures.page_results;
+      expect(resultsArray).toBeDefined();
+
+      if (resultsArray && resultsArray.length > 0) {
+        console.log(`\nFound ${resultsArray.length} pictures by sebagr`);
+      }
+    }, 10000);
+  });
+
   describe('Error Handling', () => {
     test('should handle invalid coordinates gracefully', async () => {
       await expect(client.searchTargets({

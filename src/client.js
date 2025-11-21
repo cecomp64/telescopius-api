@@ -188,6 +188,31 @@ class TelescopiusClient {
   }
 
   /**
+   * Search for astrophotography pictures
+   * @param {Object} [params] - Search parameters
+   * @param {number} [params.results_per_page] - Results per page
+   * @param {string} [params.order] - Order results by field (e.g., 'is_featured')
+   * @param {number} [params.page] - Page number
+   * @param {string} [params.username] - Filter by username
+   * @returns {Promise<Object>} Pictures search results
+   * @example
+   * const pictures = await client.searchPictures({
+   *   results_per_page: 120,
+   *   order: 'is_featured',
+   *   page: 1,
+   *   username: 'sebagr'
+   * });
+   */
+  async searchPictures(params = {}) {
+    try {
+      const response = await this.client.get('/pictures/search', { params });
+      return response.data;
+    } catch (error) {
+      this._handleError(error);
+    }
+  }
+
+  /**
    * Handle API errors
    * @private
    */
