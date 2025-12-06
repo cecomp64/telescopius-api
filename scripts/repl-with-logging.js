@@ -80,7 +80,20 @@ process.stderr.write = (function(write) {
 // Load the Telescopius SDK
 const TelescopiusClient = require('../src/index.js');
 
-// Create REPL instance
+// Print startup messages before creating REPL
+if (process.env.TELESCOPIUS_API_KEY) {
+  console.log('✅ TelescopiusClient loaded and "client" instance created');
+  console.log('   Available: TelescopiusClient (class), client (instance)');
+  console.log('   Debug mode: ENABLED (shows HTTP request/response details)');
+} else {
+  console.log('⚠️  TelescopiusClient loaded (no API key in .env)');
+  console.log('   Available: TelescopiusClient (class)');
+  console.log('   Create instance: const client = new TelescopiusClient({ apiKey: "YOUR_KEY" })');
+}
+
+console.log('\nType .help for REPL commands, .exit to quit\n');
+
+// Create REPL instance AFTER printing messages
 const replServer = repl.start({
   prompt: 'telescopius> ',
   useColors: true,
@@ -107,16 +120,7 @@ if (process.env.TELESCOPIUS_API_KEY) {
     apiKey: process.env.TELESCOPIUS_API_KEY,
     debug: true  // Enable debug mode by default
   });
-  console.log('✅ TelescopiusClient loaded and "client" instance created');
-  console.log('   Available: TelescopiusClient (class), client (instance)');
-  console.log('   Debug mode: ENABLED (shows HTTP request/response details)');
-} else {
-  console.log('⚠️  TelescopiusClient loaded (no API key in .env)');
-  console.log('   Available: TelescopiusClient (class)');
-  console.log('   Create instance: const client = new TelescopiusClient({ apiKey: "YOUR_KEY" })');
 }
-
-console.log('\nType .help for REPL commands, .exit to quit\n');
 
 // Handle REPL exit
 replServer.on('exit', () => {
