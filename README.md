@@ -61,6 +61,44 @@ const quote = await client.getQuoteOfTheDay();
 console.log(`${quote.text} - ${quote.author}`);
 ```
 
+### Debug Mode
+
+Enable debug mode to see detailed HTTP request and response logs:
+
+```javascript
+const client = new TelescopiusClient({
+  apiKey: 'YOUR_API_KEY',
+  debug: true  // Enable debug logging
+});
+
+// All API calls will now log request/response details
+const quote = await client.getQuoteOfTheDay();
+```
+
+Debug output includes:
+- HTTP method and full URL with query parameters
+- Request headers and body
+- Response status, headers, and data
+- Error details for failed requests
+
+Example debug output:
+```
+[Telescopius Debug] HTTP Request:
+  Method: GET
+  URL: https://api.telescopius.com/v2.0/targets/search?lat=38.7223&lon=-9.1393&timezone=Europe/Lisbon
+  Headers: {
+    "Authorization": "Key YOUR_API_KEY",
+    "Content-Type": "application/json"
+  }
+
+[Telescopius Debug] HTTP Response:
+  Status: 200 OK
+  Headers: {...}
+  Data: {...}
+```
+
+See [examples/debug-mode.js](examples/debug-mode.js) for a complete example.
+
 ## API Reference
 
 ### Constructor
@@ -72,6 +110,7 @@ new TelescopiusClient(config)
 **Parameters:**
 - `config.apiKey` (string, required): Your Telescopius API key
 - `config.baseURL` (string, optional): Base URL for the API (defaults to `https://api.telescopius.com/v2.0`)
+- `config.debug` (boolean, optional): Enable debug logging for HTTP requests/responses (defaults to `false`)
 
 ### Methods
 

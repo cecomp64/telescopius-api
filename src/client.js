@@ -9,6 +9,7 @@ class TelescopiusClient {
    * @param {Object} config - Configuration object
    * @param {string} config.apiKey - Your Telescopius API key
    * @param {string} [config.baseURL='https://api.telescopius.com/v2.0'] - Base URL for the API
+   * @param {boolean} [config.debug=false] - Enable debug logging for HTTP requests/responses
    */
   constructor(config) {
     if (!config || !config.apiKey) {
@@ -17,6 +18,7 @@ class TelescopiusClient {
 
     this.apiKey = config.apiKey;
     this.baseURL = config.baseURL || 'https://api.telescopius.com/v2.0';
+    this.debug = config.debug || false;
 
     this.client = axios.create({
       baseURL: this.baseURL,
@@ -25,6 +27,62 @@ class TelescopiusClient {
         'Content-Type': 'application/json',
       },
     });
+
+    // Add request/response interceptors for debug logging
+    if (this.debug) {
+      this._setupDebugLogging();
+    }
+  }
+
+  /**
+   * Setup debug logging interceptors
+   * @private
+   */
+  _setupDebugLogging() {
+    // Request interceptor
+    this.client.interceptors.request.use(
+      (config) => {
+        const url = `${config.baseURL}${config.url}`;
+        const params = config.params ? `?${new URLSearchParams(config.params).toString()}` : '';
+        console.log('\n[Telescopius Debug] HTTP Request:');
+        console.log(`  Method: ${config.method.toUpperCase()}`);
+        console.log(`  URL: ${url}${params}`);
+        console.log(`  Headers:`, JSON.stringify(config.headers, null, 2));
+        if (config.data) {
+          console.log(`  Body:`, JSON.stringify(config.data, null, 2));
+        }
+        return config;
+      },
+      (error) => {
+        console.error('[Telescopius Debug] Request Error:', error.message);
+        return Promise.reject(error);
+      }
+    );
+
+    // Response interceptor
+    this.client.interceptors.response.use(
+      (response) => {
+        console.log('\n[Telescopius Debug] HTTP Response:');
+        console.log(`  Status: ${response.status} ${response.statusText}`);
+        console.log(`  Headers:`, JSON.stringify(response.headers, null, 2));
+        console.log(`  Data:`, JSON.stringify(response.data, null, 2));
+        return response;
+      },
+      (error) => {
+        if (error.response) {
+          console.error('\n[Telescopius Debug] HTTP Error Response:');
+          console.error(`  Status: ${error.response.status} ${error.response.statusText}`);
+          console.error(`  Headers:`, JSON.stringify(error.response.headers, null, 2));
+          console.error(`  Data:`, JSON.stringify(error.response.data, null, 2));
+        } else if (error.request) {
+          console.error('\n[Telescopius Debug] No Response Received');
+          console.error(`  Request:`, error.request);
+        } else {
+          console.error('\n[Telescopius Debug] Request Setup Error:', error.message);
+        }
+        return Promise.reject(error);
+      }
+    );
   }
 
   /**

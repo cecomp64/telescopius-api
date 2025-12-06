@@ -45,6 +45,28 @@ describe('TelescopiusClient', () => {
         },
       });
     });
+
+    test('should enable debug mode when debug flag is set', () => {
+      const mockInterceptors = {
+        request: { use: jest.fn() },
+        response: { use: jest.fn() }
+      };
+      const mockCreate = jest.fn().mockReturnValue({
+        interceptors: mockInterceptors
+      });
+      axios.create = mockCreate;
+
+      client = new TelescopiusClient({ apiKey: mockApiKey, debug: true });
+
+      expect(client.debug).toBe(true);
+      expect(mockInterceptors.request.use).toHaveBeenCalled();
+      expect(mockInterceptors.response.use).toHaveBeenCalled();
+    });
+
+    test('should not enable debug mode by default', () => {
+      client = new TelescopiusClient({ apiKey: mockApiKey });
+      expect(client.debug).toBe(false);
+    });
   });
 
   describe('getQuoteOfTheDay', () => {
