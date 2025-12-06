@@ -10,7 +10,7 @@ const repl = require('repl');
 const fs = require('fs');
 const path = require('path');
 const util = require('util');
-const { Writable } = require('stream');
+const readline = require('readline');
 
 // Load environment variables
 require('dotenv').config();
@@ -36,46 +36,39 @@ logStream.write(sessionStart);
 
 console.log(`\n📝 Logging to: ${logFilePath}\n`);
 
-// Store original streams and methods
-const originalStdoutWrite = process.stdout.write.bind(process.stdout);
-const originalStderrWrite = process.stderr.write.bind(process.stderr);
-
 // Helper to strip ANSI codes (colors, cursor movement, etc.)
 function stripAnsi(str) {
-  // Remove all ANSI escape sequences:
-  // - Color codes: \x1b[...m
-  // - Cursor movement: \x1b[...G, \x1b[...J, \x1b[...K, etc.
-  // - Other control sequences: \x1b[...
   return str.replace(/\x1b\[[0-9;?]*[a-zA-Z]/g, '');
 }
 
-// Intercept stdout - capture everything written to stdout
-process.stdout.write = (function(write) {
-  return function(chunk, encoding, callback) {
-    // Write to log file without color codes
-    if (typeof chunk === 'string' || Buffer.isBuffer(chunk)) {
-      const str = chunk.toString();
-      logStream.write(stripAnsi(str));
-    }
+// Intercept console.log/error/warn for debug output from the client
+const originalConsoleLog = console.log;
+const originalConsoleError = console.error;
+const originalConsoleWarn = console.warn;
 
-    // Call original write with colors intact
-    return write.apply(process.stdout, arguments);
-  };
-})(process.stdout.write);
+console.log = function(...args) {
+  const message = args.map(arg =>
+    typeof arg === 'object' ? util.inspect(arg, { depth: null, colors: false }) : String(arg)
+  ).join(' ');
+  logStream.write(message + '\n');
+  originalConsoleLog.apply(console, args);
+};
 
-// Intercept stderr
-process.stderr.write = (function(write) {
-  return function(chunk, encoding, callback) {
-    // Write to log file without color codes
-    if (typeof chunk === 'string' || Buffer.isBuffer(chunk)) {
-      const str = chunk.toString();
-      logStream.write(stripAnsi(str));
-    }
+console.error = function(...args) {
+  const message = args.map(arg =>
+    typeof arg === 'object' ? util.inspect(arg, { depth: null, colors: false }) : String(arg)
+  ).join(' ');
+  logStream.write(message + '\n');
+  originalConsoleError.apply(console, args);
+};
 
-    // Call original write with colors intact
-    return write.apply(process.stderr, arguments);
-  };
-})(process.stderr.write);
+console.warn = function(...args) {
+  const message = args.map(arg =>
+    typeof arg === 'object' ? util.inspect(arg, { depth: null, colors: false }) : String(arg)
+  ).join(' ');
+  logStream.write(message + '\n');
+  originalConsoleWarn.apply(console, args);
+};
 
 // Load the Telescopius SDK
 const TelescopiusClient = require('../src/index.js');
@@ -93,14 +86,26 @@ if (process.env.TELESCOPIUS_API_KEY) {
 
 console.log('\nType .help for REPL commands, .exit to quit\n');
 
-// Create REPL instance AFTER printing messages
+// Create REPL instance
 const replServer = repl.start({
   prompt: 'telescopius> ',
+  input: process.stdin,
+  output: process.stdout,
   useColors: true,
   ignoreUndefined: true,
   breakEvalOnSigint: true,
   writer: (output) => {
-    // Use util.inspect to format output
+    // Log the output to file (without colors)
+    const outputStr = util.inspect(output, {
+      colors: false,
+      depth: null,
+      maxArrayLength: null,
+      breakLength: 80,
+      compact: false
+    });
+    logStream.write(outputStr + '\n');
+
+    // Return formatted output for console (with colors)
     return util.inspect(output, {
       colors: true,
       depth: null,
@@ -110,6 +115,35 @@ const replServer = repl.start({
     });
   }
 });
+
+// Store reference to original eval
+const originalEval = replServer.eval;
+
+// Track the last command to avoid duplicates
+let lastLoggedCommand = '';
+
+// Override eval to capture commands
+replServer.eval = function(cmd, context, filename, callback) {
+  // Call original eval
+  return originalEval.call(this, cmd, context, filename, (err, result) => {
+    // Only log if evaluation was successful and result is not undefined
+    // This filters out incomplete multi-line input
+    if (!err && result !== undefined) {
+      const trimmed = cmd.trim();
+      if (trimmed && trimmed !== '(undefined)') {
+        // Remove the wrapping parentheses that REPL adds
+        const cleanCmd = trimmed.replace(/^\(/, '').replace(/\n\)$/, '').trim();
+
+        // Only log if this is different from the last command (avoid duplicates)
+        if (cleanCmd !== lastLoggedCommand) {
+          logStream.write(`telescopius> ${cleanCmd}\n`);
+          lastLoggedCommand = cleanCmd;
+        }
+      }
+    }
+    callback(err, result);
+  });
+};
 
 // Add TelescopiusClient to REPL context
 replServer.context.TelescopiusClient = TelescopiusClient;
@@ -127,12 +161,8 @@ replServer.on('exit', () => {
   const sessionEnd = `\nREPL Session Ended: ${new Date().toISOString()}\n`;
   logStream.write(sessionEnd);
 
-  // Restore original streams
-  process.stdout.write = originalStdoutWrite;
-  process.stderr.write = originalStderrWrite;
-
   logStream.end(() => {
-    console.log(`\n✅ Log saved to: ${logFilePath}`);
+    process.stdout.write(`\n✅ Log saved to: ${logFilePath}\n`);
     process.exit(0);
   });
 });

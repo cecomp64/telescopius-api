@@ -101,62 +101,28 @@ See [examples/debug-mode.js](examples/debug-mode.js) for a complete example.
 
 ## API Reference
 
-### Constructor
+For complete API documentation including all endpoints, parameters, response structures, and error codes, see [API_ENDPOINTS.md](API_ENDPOINTS.md).
+
+### Quick Start
+
+#### Constructor
 
 ```javascript
-new TelescopiusClient(config)
+const client = new TelescopiusClient({
+  apiKey: 'YOUR_API_KEY',
+  debug: false  // Optional: enable debug logging
+});
 ```
 
-**Parameters:**
-- `config.apiKey` (string, required): Your Telescopius API key
-- `config.baseURL` (string, optional): Base URL for the API (defaults to `https://api.telescopius.com/v2.0`)
-- `config.debug` (boolean, optional): Enable debug logging for HTTP requests/responses (defaults to `false`)
+#### Basic Examples
 
-### Methods
-
-#### `getQuoteOfTheDay()`
-
-Get an astronomy-related quote of the day.
-
-**Returns:** `Promise<{text: string, author: string}>`
-
-**Example:**
+**Get Quote of the Day:**
 ```javascript
 const quote = await client.getQuoteOfTheDay();
 console.log(`${quote.text} - ${quote.author}`);
-// Output: "You aren't in the Universe, you are the Universe. - Eckhart Tolle"
 ```
 
-#### `searchTargets(params)`
-
-Advanced search to find targets in the sky based on location, date, and various search criteria.
-
-**Parameters:**
-- `params.lat` (number, required): Latitude in decimal degrees
-- `params.lon` (number, required): Longitude in decimal degrees
-- `params.timezone` (string, required): Timezone (e.g., 'Europe/Lisbon', 'America/New_York')
-- `params.datetime` (string, optional): Date and time in ISO format
-- `params.types` (string, optional): Object types (comma-separated: 'planet', 'galaxy', 'eneb', 'ocl', etc.)
-- `params.name` (string, optional): Object name to search for
-- `params.name_exact` (boolean, optional): Exact name match
-- `params.con` (string, optional): Constellation code (e.g., 'ORI', 'CYG', 'AND')
-- `params.min_alt` (number, optional): Minimum altitude in degrees
-- `params.min_alt_minutes` (number, optional): Minimum time at minimum altitude in minutes
-- `params.moon_dist_min` (number, optional): Minimum moon distance in degrees
-- `params.moon_dist_max` (number, optional): Minimum moon distance in degrees
-- `params.mag_max` (number, optional): Maximum magnitude
-- `params.mag_min` (number, optional): Minimum magnitude
-- `params.mag_unknown` (boolean, optional): Include objects with unknown magnitude
-- `params.size_max` (number, optional): Maximum size in arcminutes
-- `params.size_min` (number, optional): Minimum size in arcminutes
-- `params.order` (string, optional): Order by ('name', 'ra', 'dec', 'mag', 'size', 'alt', etc.)
-- `params.order_asc` (boolean, optional): Ascending order
-- `params.results_per_page` (number, optional): Results per page (default: 50)
-- `params.page` (number, optional): Page number (default: 1)
-
-**Returns:** `Promise<{matched: number, objects: Array}>`
-
-**Example:**
+**Search for Targets:**
 ```javascript
 const results = await client.searchTargets({
   lat: 38.7223,
@@ -164,222 +130,49 @@ const results = await client.searchTargets({
   timezone: 'Europe/Lisbon',
   types: 'galaxy,eneb',
   min_alt: 30,
-  mag_max: 10,
-  results_per_page: 20
-});
-
-console.log(`Found ${results.matched} objects`);
-results.objects.forEach(item => {
-  const obj = item.object;
-  console.log(`${obj.main_name || obj.main_id} - Mag: ${obj.visual_mag}`);
-  if (item.tonight_times) {
-    console.log(`  Rise: ${item.tonight_times.rise}, Transit: ${item.tonight_times.transit}`);
-  }
+  mag_max: 10
 });
 ```
 
-#### `getTargetHighlights(params)`
-
-Get popular targets best seen around this time of year at your location.
-
-**Parameters:**
-- `params.lat` (number, required): Latitude in decimal degrees
-- `params.lon` (number, required): Longitude in decimal degrees
-- `params.timezone` (string, required): Timezone
-- `params.datetime` (string, optional): Date and time in ISO format
-- `params.types` (string, optional): Object types (comma-separated)
-- `params.min_alt` (number, optional): Minimum altitude in degrees
-- `params.min_alt_minutes` (number, optional): Minimum time at minimum altitude in minutes
-- `params.moon_dist_min` (number, optional): Minimum moon distance in degrees
-- `params.moon_dist_max` (number, optional): Maximum moon distance in degrees
-
-**Returns:** `Promise<{matched: number, objects: Array}>`
-
-**Example:**
+**Get Tonight's Highlights:**
 ```javascript
 const highlights = await client.getTargetHighlights({
   lat: 38.7223,
   lon: -9.1393,
   timezone: 'Europe/Lisbon',
-  types: 'galaxy,eneb',
   min_alt: 20
 });
-
-console.log(`Tonight's highlights (${highlights.matched} total):`);
-highlights.objects.forEach(item => {
-  console.log(`- ${item.object.main_name || item.object.main_id}`);
-});
 ```
 
-#### `getTargetLists()`
-
-Get all target lists for the current user.
-
-**Returns:** `Promise<Array<{id: string, name: string}>>`
-
-**Example:**
-```javascript
-const lists = await client.getTargetLists();
-lists.forEach(list => {
-  console.log(`List ID: ${list.id}, Name: ${list.name}`);
-});
-```
-
-#### `getTargetListById(id, params)`
-
-Get a specific target list by ID with all its targets.
-
-**Parameters:**
-- `id` (string, required): The list ID
-- `params.lat` (number, optional): Latitude in decimal degrees
-- `params.lon` (number, optional): Longitude in decimal degrees
-- `params.timezone` (string, optional): Timezone
-- `params.datetime` (string, optional): Date and time in ISO format
-- `params.partner_observatory` (string, optional): Partner observatory ID
-- `params.partner_telescope` (string, optional): Partner telescope ID
-
-**Returns:** `Promise<Object>`
-
-**Example:**
-```javascript
-const list = await client.getTargetListById('12345678', {
-  lat: 38.7223,
-  lon: -9.1393,
-  timezone: 'Europe/Lisbon'
-});
-
-console.log(`List: ${list.name}`);
-list.targets.forEach(target => {
-  console.log(`- ${target.main_name || target.main_id}`);
-});
-```
-
-#### `getSolarSystemTimes(params)`
-
-Get time information for major solar system bodies (Sun, Moon, planets).
-
-**Parameters:**
-- `params.lat` (number, required): Latitude in decimal degrees
-- `params.lon` (number, required): Longitude in decimal degrees
-- `params.timezone` (string, required): Timezone
-- `params.datetime` (string, optional): Date and time in ISO format
-- `params.time_format` (string, optional): Time format ('user', 'iso', 'utc')
-- `params.partner_observatory` (string, optional): Partner observatory ID
-- `params.partner_telescope` (string, optional): Partner telescope ID
-
-**Returns:** `Promise<Object>`
-
-**Example:**
+**Get Solar System Times:**
 ```javascript
 const times = await client.getSolarSystemTimes({
   lat: 38.7223,
   lon: -9.1393,
   timezone: 'Europe/Lisbon'
 });
-
 console.log(`Sunrise: ${times.sun.rise}, Sunset: ${times.sun.set}`);
-console.log(`Moonrise: ${times.moon.rise}, Moonset: ${times.moon.set}`);
-console.log(`Moon phase: ${times.moon.phase}`);
 ```
 
-#### `searchPictures(params)`
-
-Search for astrophotography pictures uploaded by the community.
-
-**Parameters:**
-- `params.results_per_page` (number, optional): Results per page
-- `params.order` (string, optional): Order by field (e.g., 'is_featured', 'acquisition_timestamp', 'created_timestamp', 'final_revision_timestamp', 'popularity')
-- `params.page` (number, optional): Page number
-- `params.username` (string, optional): Filter by username
-
-**Returns:** `Promise<Object>`
-
-**Example:**
+**Search Pictures:**
 ```javascript
-// Get featured pictures
-const featured = await client.searchPictures({
-  results_per_page: 10,
+const pictures = await client.searchPictures({
   order: 'is_featured',
-  page: 1
-});
-
-console.log(`Found ${featured.results.length} pictures`);
-featured.results.forEach(pic => {
-  console.log(`${pic.title} by ${pic.username}`);
-});
-
-// Search by username
-const userPics = await client.searchPictures({
-  username: 'sebagr',
-  results_per_page: 20
+  results_per_page: 10
 });
 ```
 
-## Object Types
+### Available Methods
 
-Object type codes for the `types` parameter:
+- `getQuoteOfTheDay()` - Get astronomy quote
+- `searchTargets(params)` - Search for astronomical objects
+- `getTargetHighlights(params)` - Get popular targets for your location
+- `getTargetLists()` - Get your target lists
+- `getTargetListById(id, params)` - Get specific target list
+- `getSolarSystemTimes(params)` - Get Sun/Moon/planet times
+- `searchPictures(params)` - Search astrophotography pictures
 
-- `planet` - Planets
-- `star` - Stars
-- `dstar` - Double stars
-- `mstar` - Multiple stars
-- `gxy` - Galaxies
-- `sgx` - Spiral galaxies
-- `eneb` - Emission nebulae
-- `rneb` - Reflection nebulae
-- `dineb` - Diffuse nebulae
-- `pneb` - Planetary nebulae
-- `snr` - Supernova remnants
-- `gcl` - Globular clusters
-- `ocl` - Open clusters
-- `opcl` - Open clusters (alternate)
-- `ast` - Asteroids
-- `comet` - Comets
-
-Use comma-separated codes for multiple types: `types: 'gxy,eneb,pneb'`
-
-## Response Data
-
-### Target Object Structure
-
-Each target in the results contains:
-
-```javascript
-{
-  object: {
-    main_id: "NGC 7000",
-    main_name: "North America Nebula",
-    ids: ["NGC 7000", "SH 2-117", ...],
-    names: ["North America Nebula"],
-    family: "deep_sky_object",
-    types: ["eneb", "dineb", "neb", ...],
-    url: "/deep-sky-objects/ngc-7000/...",
-    main_image_url: "https://telescopius.com/img/...",
-    thumbnail_url: "https://telescopius.com/img/...",
-    ra: 20.979722,
-    dec: 44.33,
-    con: "CYG",
-    con_name: "Cygnus",
-    visual_mag: 5,
-    major_axis: 7200,  // arcseconds
-    minor_axis: 6000,
-    subr: 23.8         // surface brightness
-  },
-  tonight_times: {
-    rise: "16:33",
-    transit: "22:26",
-    set: "04:31"
-  },
-  transit_observation: {
-    ra: 20.979722,
-    dec: 44.33,
-    alt: 45.67,        // altitude in degrees
-    az: 0.52,          // azimuth in degrees
-    mag: 5,
-    con: "CYG"
-  }
-}
-```
+See [API_ENDPOINTS.md](API_ENDPOINTS.md) for complete parameter documentation and response structures
 
 ## Examples
 
