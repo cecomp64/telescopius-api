@@ -134,8 +134,13 @@ replServer.eval = function(cmd, context, filename, callback) {
         // Remove the wrapping parentheses that REPL adds
         const cleanCmd = trimmed.replace(/^\(/, '').replace(/\n\)$/, '').trim();
 
-        // Only log if this is different from the last command (avoid duplicates)
-        if (cleanCmd !== lastLoggedCommand) {
+        // Filter out autocomplete/inspection try-catch statements
+        // These are internal REPL mechanisms and not user commands
+        // Match patterns like: try { expr } catch {}, try { expr } catch {}
+        const isTryCatch = /^try\s*\{[^}]+\}\s*catch\s*\{\s*\}$/s.test(cleanCmd);
+
+        // Only log if this is different from the last command and not a try-catch
+        if (!isTryCatch && cleanCmd !== lastLoggedCommand) {
           logStream.write(`telescopius> ${cleanCmd}\n`);
           lastLoggedCommand = cleanCmd;
         }
