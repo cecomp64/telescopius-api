@@ -436,3 +436,7 @@ For API-related questions or to request new endpoints:
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+## Publishing
+
+`npm publish`
